@@ -15,7 +15,7 @@ spinner.down() //=> 1
 spinner.down() //=> 0
 spinner.down() //=> -1
 
-
+//Revealing module pattern
 function spinnerFactory(){
 	var counter = 0;
 
