@@ -67,15 +67,27 @@ describe('Sorting', function(){
 						list[j] = temp;
 					}
 		}
-		describe('Products by value (cost * units)', function(){
-			function productComparerByValue(p1, p2){
-				var p1Value = p1.cost * p1.units,
-					p2Value = p2.cost * p2.units;
-				if (p1Value < p2Value) return -1;
-				if (p1Value > p2Value) return 1;
-				return 0;
+
+		function getDescendingComparer(comparer){
+			return function(){
+				return comparer.apply(this, arguments) * -1;
 			}
+		}
+		function productComparerByValue(p1, p2){
+			var p1Value = p1.cost * p1.units,
+				p2Value = p2.cost * p2.units;
+			if (p1Value < p2Value) return -1;
+			if (p1Value > p2Value) return 1;
+			return 0;
+		}
+		describe('Products by value (cost * units)', function(){	
 			sort(products, productComparerByValue);
+			console.table(products);
+		});
+
+		describe('Products by value (cost * units) [ descending ] ', function(){
+			var descendingProductComparerByValue = getDescendingComparer(productComparerByValue);	
+			sort(products, descendingProductComparerByValue);
 			console.table(products);
 		});
 	});
@@ -105,9 +117,15 @@ describe('Filtering', function(){
 			return result;
 		}
 
-		function negate(criteria){
+		/*function negate(criteria){
 			return function(product){
 				return !criteria(product);
+			}
+		}*/
+
+		function negate(criteria){
+			return function(){
+				return !criteria.apply(this, arguments);
 			}
 		}
 
@@ -159,6 +177,58 @@ describe('Filtering', function(){
 		});
 	})
 });
+
+describe('GroupBy', function(){
+	function describeGroup(groupedItems){
+		for(var key in groupedItems){
+			var title = 'Key - [' + key + ']';
+			describe(title, (function(item){
+				return function(){
+					console.table(item);
+				}
+			})(groupedItems[key]));
+		}
+	}
+	function groupBy(list, keySelector){
+		var result = {};
+		for(var index = 0, count = list.length; index < count; index++){
+			var key = keySelector(list[index]);
+			//result[key] = result[key] || [];
+			//if (!result.hasOwnProperty(key))
+			if (typeof result[key] === 'undefined')
+				result[key] = [];
+
+			result[key].push(list[index]);
+		}
+		return result;
+	}
+	describe('Products by catergory', function(){
+		var categoryKeySelector = function(product){
+			return product.category;
+		};
+
+		var productsByCategory = groupBy(products, categoryKeySelector);
+		describeGroup(productsByCategory);
+	});
+
+	describe('Products by cost', function(){
+		var costKeySelectory = function(product){
+			return product.cost <= 50 ? 'affordable' : 'costly';
+		};
+
+		var productsByCost = groupBy(products, costKeySelectory);
+		describeGroup(productsByCost);
+	});
+
+	describe('Products by units', function(){
+		var unitsKeySelector = function(product){
+			return product.units <= 50 ? 'understocke' : 'wellstocked';
+		};
+
+		var productsByUnits = groupBy(products, unitsKeySelector);
+		describeGroup(productsByUnits);
+	});
+})
 
 
 
