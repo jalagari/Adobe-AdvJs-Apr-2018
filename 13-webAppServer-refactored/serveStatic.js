@@ -7,16 +7,17 @@ function isStatic(resource){
 	return staticExtns.indexOf(path.extname(resource)) !== -1;
 }
 
-module.exports = function(req, res){
-	if (isStatic(req.urlObj.pathname)){
-		var resourcePath = path.join(__dirname, req.urlObj.pathname);
-
-		if (!fs.existsSync(resourcePath)){
-			res.statusCode = 404;
-			res.end();
-			return;
+module.exports = function(staticResourcePath){
+	return function(req, res, next){
+		var resourcePath = path.join(staticResourcePath, req.urlObj.pathname);
+		if (isStatic(resourcePath) && fs.existsSync(resourcePath)){
+			var stream = fs.createReadStream(resourcePath);
+			stream.pipe(res);
+			stream.on('end', function(){
+				next();
+			});
+		} else {
+			next();
 		}
-		var stream = fs.createReadStream(resourcePath);
-		stream.pipe(res);
 	}
-}
+};
